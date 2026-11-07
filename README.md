@@ -1,290 +1,130 @@
-Welcome to your new TanStack app! 
+# Votum
 
-# Getting Started
+A full-stack platform for sharing, browsing and refining startup ideas and side hustles. Visitors can read ideas freely, and registered members can post and manage their own.
 
-To run this application:
+This repository is the **React frontend**. The REST API lives in [votum-api](https://github.com/alagiehafigue/votum-api).
+
+> The app is branded **IdeaDrop** in the interface.
+
+## Features
+
+- Browse all ideas, or see the three latest on the home page
+- Read a full idea with its title, summary, description and tags
+- Create, edit and delete ideas through a REST API protected by JWT
+- Register, log in and log out
+- Stay signed in across page reloads using a silent token refresh
+- Responsive layout built with Tailwind CSS
+- Friendly 404 page and loading handled by route loaders
+
+## Tech Stack
+
+| Area | Tools |
+| --- | --- |
+| UI | React 19, TypeScript |
+| Routing | TanStack Router (file-based routes, auto code splitting) |
+| Data fetching | TanStack Query, Axios |
+| Styling | Tailwind CSS 4, Lucide icons |
+| Build and test | Vite 7, Vitest, Testing Library |
+| Backend | Express 5, MongoDB with Mongoose, jose (JWT), bcryptjs |
+
+## How Authentication Works
+
+1. A user registers or logs in and the API returns a short-lived **access token** (JWT) in the response body.
+2. The API also sets a **refresh token** (30 days) in an `httpOnly` cookie, so JavaScript can never read it.
+3. On every page load the app calls `POST /api/auth/refresh`. If the cookie is valid, the user is signed in again without typing a password.
+4. Passwords are hashed with bcrypt before they are stored.
+
+## Project Structure
+
+```
+src/
+  api/          Axios calls for auth and ideas
+  componets/    Shared components (Header, IdeaCard)
+  context/      AuthContext (access token and current user)
+  lib/          Axios instance (baseURL /api, credentials enabled)
+  routes/       File-based routes
+    (auth)/     login and register
+    ideas/      list, new, $ideaId detail and edit
+  types.ts      Shared TypeScript types
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18 or newer
+- A MongoDB database (local or MongoDB Atlas)
+
+### 1. Start the API
 
 ```bash
+git clone https://github.com/alagiehafigue/votum-api.git
+cd votum-api
 npm install
-npm run start
 ```
 
-# Building For Production
+Create a `.env` file:
 
-To build this application for production:
+```env
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=a_long_random_secret
+PORT=8000
+```
+
+Then run it:
 
 ```bash
-npm run build
+npm run dev
 ```
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+### 2. Start the frontend
 
 ```bash
-npm run test
+git clone https://github.com/alagiehafigue/votum.git
+cd votum
+npm install
+npm run dev
 ```
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-
-
-
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-```
-
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
-
-```bash
-npm install @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
-
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
-
-Now you can use `useQuery` to fetch your data.
-
-```tsx
-import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
-
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
-```
-
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
-
-## State Management
-
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
-
-```bash
-npm install @tanstack/store
-```
-
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+Open http://localhost:3000. Vite forwards every `/api` request to the API on port 8000, so no extra CORS setup is needed in development.
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server on port 3000 |
+| `npm run build` | Create a production build and type-check |
+| `npm run serve` | Preview the production build |
+| `npm run test` | Run tests with Vitest |
+| `npm run json-server` | Run a mock API from `src/data/db.json` on port 8000 |
+
+## API Endpoints
+
+| Method | Route | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/api/auth/register` | Public | Create an account |
+| POST | `/api/auth/login` | Public | Log in |
+| POST | `/api/auth/logout` | Public | Clear the refresh cookie |
+| POST | `/api/auth/refresh` | Cookie | Get a new access token |
+| GET | `/api/ideas` | Public | List ideas, newest first (`?_limit=3` to limit) |
+| GET | `/api/ideas/:id` | Public | Get one idea |
+| POST | `/api/ideas` | Protected | Create an idea |
+| PUT | `/api/ideas/:id` | Protected | Update an idea |
+| DELETE | `/api/ideas/:id` | Protected | Delete an idea |
+
+An idea has a `title`, `summary`, `description` and a list of `tags`, plus automatic `createdAt` and `updatedAt` timestamps.
+
+## Roadmap
+
+- [ ] Send the access token with every request from the frontend
+- [ ] Link each idea to its author and allow only the owner to edit or delete it
+- [ ] Add voting on ideas
+- [ ] Add search and tag filtering
+- [ ] Add component tests with Vitest and Testing Library
+- [ ] Deploy the API and frontend
+
+## Author
+
+**Alagie Hafigue Bah**
+Computer Science student at KNUST
+GitHub: [@alagiehafigue](https://github.com/alagiehafigue)
